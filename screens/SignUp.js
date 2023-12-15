@@ -70,7 +70,8 @@ export default function SignUp(props) {
            {
             auth.createUserWithEmailAndPassword(email,pwd)
             .then(()=>{
-              props.navigation.navigate("Home")
+              const currentid = auth.currentUser.uid;
+               props.navigation.navigate("Home",{currentid: currentid})
             })
             .catch((err)=>{alert(err)});
            }

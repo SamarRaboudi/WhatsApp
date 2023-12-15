@@ -1,22 +1,82 @@
-import React from 'react';
-import { View, StyleSheet, Text, Image, ImageBackground, FlatList } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Text, Image, ImageBackground, FlatList, TouchableOpacity, Linking } from 'react-native';
+import { Button, Dialog, IconButton } from 'react-native-paper';
+import firebase from '../config';
 
-const data = [
-  { firstName: 'John', lastName: 'Doe', phone: '555-1234' },
-  { firstName: 'Jane', lastName: 'Smith', phone: '555-5678' },
-];
-
-const ProfileItem = ({ firstName, lastName, phone }) => (
+const ProfileItem = ({ firstName, lastName, phone, url, onPress, navigation, currentid, item }) => (
   <View style={styles.profileItem}>
-    <Image source={require('../assets/profil.jpg')} style={styles.profileImage} />
+    <TouchableOpacity onPress={onPress}>
+      <Image source={{ uri: url }} style={styles.profileImage} />
+    </TouchableOpacity>
     <View style={styles.profileInfo}>
       <Text style={styles.name}>{firstName} {lastName}</Text>
       <Text style={styles.phone}>{phone}</Text>
     </View>
+    <IconButton
+      icon="phone"
+      color="#fff"
+      size={20}
+      style={styles.iconButton}
+      onPress={() => {
+        const phoneNumber = `tel:+216${phone}`;
+        Linking.openURL(phoneNumber);
+      }}
+    />
+    <IconButton
+      icon="send"
+      color="#fff"
+      size={20}
+      style={styles.iconButton}
+      onPress={() => {
+        navigation.navigate("Chat", { currentid, seconditem: item });
+      }}
+    />
   </View>
 );
 
-export default function List_Profils() {
+
+const database = firebase.database();
+
+export default function List_Profils(props) {
+  const [data, setData] = useState([]);
+  const [visible, setVisible] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [currentitem, setCurrentitem] = useState({
+    firstName : "",
+    lastName : "",
+    phone : ""
+  });
+  const refProfils = database.ref('profils');
+  const currentid = props.route.params.currentid;
+
+  useEffect(() => {
+    refProfils.on("value", (snapshot) => {
+      let d = [];
+      snapshot.forEach((un_profil) => {
+        if(un_profil.val().id === currentid){
+            setCurrentitem(un_profil.val());
+        }else{
+          d.push(un_profil.val());
+        }
+        
+      });
+      setData(d);
+    });
+    return () => {
+      refProfils.off();
+    };
+  }, []);
+
+  const openDialog = (profile) => {
+    setSelectedProfile(profile);
+    setVisible(true);
+  };
+
+  const closeDialog = () => {
+    setVisible(false);
+    setSelectedProfile(null);
+  };
+
   return (
     <ImageBackground
       source={require('../assets/backgound.png')}
@@ -27,9 +87,42 @@ export default function List_Profils() {
         <FlatList
           style={styles.flatList}
           data={data}
-          renderItem={({ item }) => <ProfileItem {...item} />}
+          renderItem={({ item }) => (
+            <ProfileItem
+              {...item}
+              onPress={() => openDialog(item)}
+              navigation={props.navigation}
+              currentid={currentid}
+              item={item} 
+            />
+          )}
           keyExtractor={(item, index) => index.toString()}
         />
+
+        <Dialog visible={visible} onDismiss={closeDialog}>
+          <Dialog.Title>Details</Dialog.Title>
+          <Dialog.Content style={{ padding: 10, alignItems: 'center' }}>
+            {selectedProfile ? (
+              <>
+                <Image
+                  resizeMode="center"
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                  source={{ uri: selectedProfile.url }}
+                />
+                <Text style={{ marginTop: 10, fontWeight: 'bold' }}>
+                 {selectedProfile.firstName} {selectedProfile.lastName}
+                </Text>
+                <Text style={{ color: 'gray' }}>+216 {selectedProfile.phone}</Text>
+              </>
+            ) : (
+              <Text>No profile selected</Text>
+            )}
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={closeDialog}>Done</Button>
+            <Button onPress={closeDialog}>Cancel</Button>
+          </Dialog.Actions>
+        </Dialog>
       </View>
     </ImageBackground>
   );
@@ -44,11 +137,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
     justifyContent: 'flex-start',
     paddingTop: 50,
-    width: '100%', // Set the width of the container to 100%
+    width: '100%',
   },
   title: {
     fontSize: 32,
@@ -60,7 +151,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   flatList: {
-    width: '90%', 
+    width: '90%',
   },
   profileItem: {
     flexDirection: 'row',
@@ -77,12 +168,12 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 50,
     height: 50,
-    borderRadius: 15,
+    borderRadius: 50,
     marginRight: 10,
   },
   profileInfo: {
     flex: 1,
-    justifyContent: 'center', 
+    justifyContent: 'center',
   },
   name: {
     fontSize: 16,
@@ -92,5 +183,9 @@ const styles = StyleSheet.create({
   phone: {
     fontSize: 15,
     color: '#888',
+  },
+  iconButton: {
+    backgroundColor: '#C7C7C7', 
+    marginLeft: 5,
   },
 });

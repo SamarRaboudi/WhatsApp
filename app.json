@@ -25,6 +25,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    }, 
+     "permissions": {
+      "camera": {
+        "settings": {
+          "scope": "both"
+        }
+      }, 
+      "location": {
+        "always": true
+      }
     }
   }
 }

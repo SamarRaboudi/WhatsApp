@@ -5,27 +5,10 @@ import { useRef, useState } from 'react';
 import firebase from '../config'; 
 
 const auth = firebase.auth();
-//import Svg, { Path } from 'react-native-svg';
-
-/*function SvgWave() {
-  return (
-    <Svg
-      height={100}  // Adjust the height to make the wave longer
-      width={Dimensions.get('screen').width}
-      viewBox="0 0 1440 320"
-    >
-      <Path
-        fill="#e7008a"
-        fillOpacity="0.7"
-        d="M0,160L48,186.7C96,213,192,267,288,250.7C384,235,480,149,576,112C672,75,768,85,864,117.3C960,149,1056,203,1152,213.3C1248,224,1344,192,1392,176L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
-      />
-    </Svg>
-  );
-}*/
 
 export default function Auth(props) {
-  const [email, setemail] = useState()
-  const [pwd, setpwd] = useState()
+  const [email, setemail] = useState("test1@gmail.com")
+  const [pwd, setpwd] = useState("123456")
   const refinput2 = useRef();
 
 
@@ -69,9 +52,11 @@ export default function Auth(props) {
           style={styles.button}
           mode="contained"
           onPress={() => {
-             auth.signInWithEmailAndPassword(email,pwd)
+            if(email && pwd)
+             auth.signInWithEmailAndPassword(email.trim(),pwd.trim())
              .then(()=>{
-               props.navigation.navigate("Home")
+              const currentid = auth.currentUser.uid;
+               props.navigation.navigate("Home",{currentid: currentid})
              })
              .catch((err)=>{alert(err)});
             
@@ -141,9 +126,9 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: '#FC8EAC',
-    textShadowColor: '#fff', // Shadow color
-    textShadowOffset: { width: 2, height: 2 }, // Shadow offset
-    textShadowRadius: 3, // Shadow radius
+    textShadowColor: '#fff', 
+    textShadowOffset: { width: 2, height: 2 }, 
+    textShadowRadius: 3,
     marginBottom: 40,
   },
   subtitle: {
